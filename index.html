@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Math Maze: Petualangan Operasi Hitung</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Fredoka', cursive, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      background-color: #15803d;
+      background-image: linear-gradient(rgba(8, 14, 30, 0.45), rgba(8, 14, 30, 0.62)), url('https://lh3.googleusercontent.com/d/1dKTh_sWBSxQbes7SRY_9LFiaR44TxBZi');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    .font-arcade {
+      font-family: 'Press Start 2P', monospace;
+    }
+    .neon-border {
+      box-shadow: 0 0 15px rgba(0, 150, 255, 0.45), inset 0 0 15px rgba(0, 150, 255, 0.2);
+    }
+    .neon-glow-text {
+      text-shadow: 0 0 8px rgba(56, 189, 248, 0.8), 0 0 16px rgba(14, 165, 233, 0.5);
+    }
+    .neon-glow-green {
+      text-shadow: 0 0 8px rgba(74, 222, 128, 0.8), 0 0 16px rgba(34, 197, 94, 0.5);
+    }
+    .neon-glow-red {
+      text-shadow: 0 0 8px rgba(248, 113, 113, 0.8), 0 0 16px rgba(239, 68, 68, 0.5);
+    }
+    /* Google Drive Cartoon Background */
+    .start-screen-bg {
+      background-color: #15803d;
+      background-image: url('https://lh3.googleusercontent.com/d/1dKTh_sWBSxQbes7SRY_9LFiaR44TxBZi');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    /* Cartoon 3D Header & Wooden Signboard */
+    .wood-board {
+      background: linear-gradient(180deg, #b45309 0%, #78350f 100%);
+      box-shadow: 0 8px 0 #451a03, 0 14px 20px rgba(0, 0, 0, 0.45);
+      border: 4px solid #fef3c7;
+    }
+    .text-title-3d {
+      color: #facc15;
+      text-shadow: 
+        -2px -2px 0 #78350f, 2px -2px 0 #78350f, -2px 2px 0 #78350f, 2px 2px 0 #78350f,
+        0 4px 0 #b45309, 0 6px 0 #78350f, 0 8px 10px rgba(0,0,0,0.5);
+    }
+    /* Cartoon Interactive Pills */
+    .cartoon-pill {
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+      user-select: none;
+    }
+    .cartoon-pill:hover {
+      transform: translateY(-2px);
+    }
+    .cartoon-pill:active {
+      transform: translateY(1px) scale(0.98);
+    }
+    /* Touch button pressed states */
+    .dpad-btn:active {
+      transform: scale(0.92);
+      filter: brightness(1.3);
+    }
+    /* Smooth canvas rendering */
+    canvas {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col items-center justify-between p-2 md:p-4 overflow-x-hidden">
+
+  <header class="w-full max-w-2xl flex flex-col items-center gap-2 mb-1">
+    <div class="w-full flex items-center justify-between px-3 py-1.5 bg-slate-900/90 rounded-xl border border-blue-900/60 neon-border flex-wrap gap-2">
+      <!-- Player 1 Stats -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs uppercase font-bold text-yellow-400" id="p1Label">P1:</span>
+        <span id="scoreDisplay" class="font-arcade text-yellow-300 text-xs md:text-sm">0</span>
+        <div class="flex items-center gap-0.5 ml-1" id="livesContainer"></div>
+      </div>
+
+      <!-- Player 2 Stats (Shown in 2P mode) -->
+      <div class="hidden items-center gap-2" id="p2HudBlock">
+        <span class="text-xs uppercase font-bold text-emerald-400">P2:</span>
+        <span id="scoreDisplayP2" class="font-arcade text-emerald-300 text-xs md:text-sm">0</span>
+        <div class="flex items-center gap-0.5 ml-1" id="livesContainerP2"></div>
+      </div>
+
+      <!-- Controls & Quick Navigation -->
+      <div class="flex items-center gap-2 ml-auto">
+        <button id="toggleTouchBtn" title="Tampilkan/Sembunyikan D-Pad Sentuh" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs flex items-center gap-1 border border-cyan-800/40">
+          🎮 <span class="hidden sm:inline">D-Pad</span>
+        </button>
+        <button id="menuBtn" title="Kembali ke Menu" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs flex items-center gap-1 border border-cyan-800/40">
+          ⚙️ <span class="hidden sm:inline">Menu</span>
+        </button>
+        <button id="fullscreenBtn" title="Layar Penuh" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs flex items-center gap-1 border border-cyan-800/40">
+          <span id="fullscreenIcon">⛶</span>
+        </button>
+        <button id="soundToggle" title="Suara" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs flex items-center gap-1 border border-cyan-800/40">
+          <span id="soundIcon">🔊</span>
+        </button>
+        <div class="text-xs text-slate-400">Soal: <span id="questionProgressDisplay" class="text-yellow-300 font-bold">0/10</span></div>
+        <div class="text-xs text-slate-400 hidden sm:block">Lv: <span id="levelDisplay" class="text-cyan-300 font-bold">1</span></div>
+      </div>
+    </div>
+
+    <!-- Math Question Banner -->
+    <div class="w-full bg-slate-900/95 border-2 border-cyan-400/80 rounded-2xl p-2 sm:p-3 shadow-lg shadow-cyan-500/20 text-center flex flex-col items-center justify-center gap-1.5 neon-border backdrop-blur-md mt-1">
+      <div class="flex items-center justify-center gap-2 flex-wrap">
+        <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-1">
+          <span>🎯</span> <span>SOAL:</span>
+        </span>
+        <span id="mathQuestion" class="font-arcade text-lg sm:text-2xl md:text-3xl text-yellow-300 neon-glow-text font-black px-3.5 py-1 rounded-xl bg-black/70 border border-yellow-500/60 shadow-inner">
+          Memuat soal...
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="w-full max-w-5xl flex flex-col lg:flex-row items-center justify-center gap-3 relative flex-1 my-1">
+    <!-- Player 1 Touch Controller (Yellow) for IFP -->
+    <div id="p1TouchWrapper" class="flex flex-col items-center justify-center p-2.5 bg-slate-900/80 rounded-2xl border border-yellow-500/40 shadow-xl select-none order-2 lg:order-1">
+      <span id="p1PadTitle" class="text-xs font-bold text-yellow-400 mb-2 uppercase tracking-wider">KONTROL SENTUH P1</span>
+      <div class="grid grid-cols-3 gap-2 w-36 h-36">
+        <div></div>
+        <button data-player="1" data-dx="0" data-dy="-1" class="dpad-btn rounded-xl bg-slate-800 border-2 border-yellow-500/60 text-yellow-300 font-black text-xl flex items-center justify-center shadow active:bg-yellow-500 active:text-black">▲</button>
+        <div></div>
+        <button data-player="1" data-dx="-1" data-dy="0" class="dpad-btn rounded-xl bg-slate-800 border-2 border-yellow-500/60 text-yellow-300 font-black text-xl flex items-center justify-center shadow active:bg-yellow-500 active:text-black">◀</button>
+        <button data-player="1" data-dx="0" data-dy="1" class="dpad-btn rounded-xl bg-slate-800 border-2 border-yellow-500/60 text-yellow-300 font-black text-xl flex items-center justify-center shadow active:bg-yellow-500 active:text-black">▼</button>
+        <button data-player="1" data-dx="1" data-dy="0" class="dpad-btn rounded-xl bg-slate-800 border-2 border-yellow-500/60 text-yellow-300 font-black text-xl flex items-center justify-center shadow active:bg-yellow-500 active:text-black">▶</button>
+      </div>
+    </div>
+
+    <!-- Canvas Maze Area -->
+    <div class="relative rounded-2xl p-1 bg-black border-2 border-blue-500/70 shadow-2xl overflow-hidden order-1 lg:order-2" id="canvasWrapper">
+      <canvas id="gameCanvas" width="460" height="520" class="block rounded-xl bg-black cursor-pointer"></canvas>
+      
+      <!-- Feedback notification badge -->
+      <div id="feedbackToast" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0 transition-opacity duration-300 text-center font-arcade text-lg md:text-2xl px-6 py-3 rounded-2xl border-2 backdrop-blur-md"></div>
+    </div>
+
+    <!-- Player 2 Touch Controller (Emerald) for IFP -->
+    <div id="p2TouchWrapper" class="hidden flex-col items-center justify-center p-2.5 bg-slate-900/80 rounded-2xl border border-emerald-500/40 shadow-xl select-none order-3">
+      <span class="text-xs font-bold text-emerald-400 mb-2 uppercase tracking-wider">KONTROL SENTUH P2</span>
+      <div class="grid grid-cols-3 gap-2 w-36 h-36">
+        <div></div>
+        <button data-player="2" data-dx="0" data-dy="-1" class="dpad-btn rounded-xl bg-slate-800 border-2 border-emerald-500/60 text-emerald-300 font-black text-xl flex items-center justify-center shadow active:bg-emerald-500 active:text-black">▲</button>
+        <div></div>
+        <button data-player="2" data-dx="-1" data-dy="0" class="dpad-btn rounded-xl bg-slate-800 border-2 border-emerald-500/60 text-emerald-300 font-black text-xl flex items-center justify-center shadow active:bg-emerald-500 active:text-black">◀</button>
+        <button data-player="2" data-dx="0" data-dy="1" class="dpad-btn rounded-xl bg-slate-800 border-2 border-emerald-500/60 text-emerald-300 font-black text-xl flex items-center justify-center shadow active:bg-emerald-500 active:text-black">▼</button>
+        <button data-player="2" data-dx="1" data-dy="0" class="dpad-btn rounded-xl bg-slate-800 border-2 border-emerald-500/60 text-emerald-300 font-black text-xl flex items-center justify-center shadow active:bg-emerald-500 active:text-black">▶</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="w-full max-w-2xl text-center text-slate-400 text-xs py-1">
+    <p class="hidden md:block" id="controlsGuideText">Gunakan tombol panah atau <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-cyan-300 border border-slate-700">W A S D</kbd> untuk bergerak.</p>
+    <p class="text-[11px] text-cyan-500/80 mt-0.5">Jawaban Benar = <span class="text-green-400 font-bold">+10 Poin</span> | Jawaban Salah = <span class="text-red-400 font-bold">-5 Poin</span> | Hindari Monster!</p>
+  </footer>
+
+  <!-- Start Screen Overlay with Custom Google Drive Background -->
+  <div id="startScreenModal" class="fixed inset-0 start-screen-bg flex items-center justify-center p-3 z-50 overflow-y-auto">
+    <!-- Semi-transparent overlay to ensure clarity -->
+    <div class="fixed inset-0 bg-black/25 pointer-events-none"></div>
+
+    <div class="relative z-10 w-full max-w-xl my-auto flex flex-col items-center">
+      
+      <!-- 3D Wooden Header: MATH MAZE -->
+      <div class="relative z-20 flex flex-col items-center -mb-5 w-full max-w-md px-2">
+        <div class="wood-board rounded-3xl px-6 py-2.5 flex items-center justify-between gap-3 w-full shadow-2xl relative">
+          <!-- Gamepad Icon Left -->
+          <div class="text-3xl sm:text-4xl filter drop-shadow-md select-none transform -rotate-12 hover:rotate-0 transition">
+            🎮
+          </div>
+
+          <!-- Main Title Text -->
+          <div class="flex flex-col items-center">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-black text-title-3d tracking-wider uppercase font-fredoka">
+              MATH MAZE
+            </h1>
+            <div class="bg-amber-900/90 border border-amber-600/70 text-amber-100 text-[10px] sm:text-xs font-black tracking-widest px-3 py-0.5 rounded-full uppercase mt-0.5 shadow-inner">
+              PETUALANGAN OPERASI HITUNG
+            </div>
+          </div>
+
+          <!-- Ruler Icon Right -->
+          <div class="text-3xl sm:text-4xl filter drop-shadow-md select-none transform rotate-12 hover:rotate-0 transition">
+            📐
+          </div>
+
+          <!-- Corner Decorative Screws -->
+          <div class="absolute top-1.5 left-2 w-2 h-2 rounded-full bg-amber-950 border border-amber-400"></div>
+          <div class="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-amber-950 border border-amber-400"></div>
+          <div class="absolute bottom-1.5 left-2 w-2 h-2 rounded-full bg-amber-950 border border-amber-400"></div>
+          <div class="absolute bottom-1.5 right-2 w-2 h-2 rounded-full bg-amber-950 border border-amber-400"></div>
+        </div>
+      </div>
+
+      <!-- Main White Glossy Dialog Card -->
+      <div class="w-full bg-white/95 backdrop-blur-md rounded-[32px] border-[5px] border-cyan-400 shadow-2xl pt-8 pb-5 px-4 sm:px-6 space-y-3.5 text-slate-800">
+        
+        <!-- 1. Jumlah Pemain -->
+        <div>
+          <div class="inline-flex items-center gap-1.5 bg-blue-500 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2 shadow-sm">
+            <span>👤</span> <span>1. JUMLAH PEMAIN</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div id="pillMode1P" class="cartoon-pill flex items-center justify-between px-3.5 py-2.5 rounded-2xl border-2 border-green-500 bg-green-100 text-slate-800 font-bold text-sm sm:text-base">
+              <span class="flex items-center gap-2"><span>👤</span> 1 Pemain</span>
+              <span id="checkMode1P" class="w-5 h-5 rounded-full bg-emerald-500 text-white text-xs flex items-center justify-center font-black shadow-sm">✓</span>
+            </div>
+            <div id="pillMode2P" class="cartoon-pill flex items-center justify-between px-3.5 py-2.5 rounded-2xl border-2 border-slate-300 bg-slate-50 text-slate-500 font-bold text-sm sm:text-base hover:border-slate-400">
+              <span class="flex items-center gap-2"><span>👥</span> 2 Pemain</span>
+              <span id="checkMode2P" class="w-5 h-5 rounded-full bg-emerald-500 text-white text-xs items-center justify-center font-black shadow-sm hidden">✓</span>
+            </div>
+          </div>
+          <p id="playerModeHelp" class="text-[11px] text-slate-500 mt-1 italic pl-1">Mode Solo: Navigasi maze dengan Tombol Panah atau WASD.</p>
+        </div>
+
+        <!-- 2. Operasi Hitung -->
+        <div>
+          <div class="inline-flex items-center gap-1.5 bg-purple-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2 shadow-sm">
+            <span>🧮</span> <span>2. OPERASI HITUNG (PILIH MINIMAL 1)</span>
+          </div>
+          <!-- Hidden Native Checkboxes -->
+          <div class="hidden">
+            <input type="checkbox" id="opAdd" value="+" checked>
+            <input type="checkbox" id="opSub" value="-" checked>
+            <input type="checkbox" id="opMul" value="×" checked>
+            <input type="checkbox" id="opDiv" value="÷" checked>
+          </div>
+          <!-- Styled Cartoon Pills -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div id="pillOpAdd" class="cartoon-pill op-toggle-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-cyan-400 bg-cyan-100 text-cyan-950 font-bold text-sm">
+              <span class="flex items-center gap-1.5"><span class="text-cyan-600">➕</span> Tambah</span>
+              <span class="check-badge w-4 h-4 rounded-full bg-emerald-500 text-white text-[10px] flex items-center justify-center font-black shadow-sm">✓</span>
+            </div>
+            <div id="pillOpSub" class="cartoon-pill op-toggle-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-purple-400 bg-purple-100 text-purple-950 font-bold text-sm">
+              <span class="flex items-center gap-1.5"><span class="text-purple-600">➖</span> Kurang</span>
+              <span class="check-badge w-4 h-4 rounded-full bg-emerald-500 text-white text-[10px] flex items-center justify-center font-black shadow-sm">✓</span>
+            </div>
+            <div id="pillOpMul" class="cartoon-pill op-toggle-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-amber-400 bg-amber-100 text-amber-950 font-bold text-sm">
+              <span class="flex items-center gap-1.5"><span class="text-amber-600">✖️</span> Kali</span>
+              <span class="check-badge w-4 h-4 rounded-full bg-emerald-500 text-white text-[10px] flex items-center justify-center font-black shadow-sm">✓</span>
+            </div>
+            <div id="pillOpDiv" class="cartoon-pill op-toggle-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-rose-400 bg-rose-100 text-rose-950 font-bold text-sm">
+              <span class="flex items-center gap-1.5"><span class="text-rose-600">➗</span> Bagi</span>
+              <span class="check-badge w-4 h-4 rounded-full bg-emerald-500 text-white text-[10px] flex items-center justify-center font-black shadow-sm">✓</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Tingkat Kesukaran -->
+        <div>
+          <div class="inline-flex items-center gap-1.5 bg-emerald-500 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2 shadow-sm">
+            <span>⭐</span> <span>3. TINGKAT KESUKARAN</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div data-diff-val="easy" class="cartoon-pill diff-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-slate-300 bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm">
+              <span class="flex items-center gap-1.5"><span>🌱</span> Mudah</span>
+              <span class="diff-check w-4 h-4 rounded-full bg-emerald-500 text-white text-[10px] items-center justify-center font-black shadow-sm hidden">✓</span>
+            </div>
+            <div data-diff-val="medium" class="cartoon-pill diff-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-amber-400 bg-amber-100 text-amber-950 font-bold text-xs sm:text-sm">
+              <span class="flex items-center gap-1.5"><span>⚡</span> Sedang</span>
+              <span class="diff-check w-4 h-4 rounded-full bg-emerald-500 text-white text-[10px] flex items-center justify-center font-black shadow-sm">✓</span>
+            </div>
+            <div data-diff-val="hard" class="cartoon-pill diff-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-slate-300 bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm">
+              <span class="flex items-center gap-1.5"><span>🔥</span> Sulit</span>
+              <span class="diff-check w-4 h-4 rounded-full bg-emerald-500 text-white text-[10px] items-center justify-center font-black shadow-sm hidden">✓</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Target Jumlah Soal -->
+        <div>
+          <div class="inline-flex items-center gap-1.5 bg-indigo-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2 shadow-sm">
+            <span>🏆</span> <span>4. TARGET JUMLAH SOAL</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div data-limit-val="10" class="cartoon-pill limit-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-cyan-400 bg-cyan-100 text-cyan-950 font-bold text-xs sm:text-sm">
+              <span class="flex items-center gap-1.5"><span>⭐</span> 10 Soal</span>
+              <span class="limit-check w-4 h-4 rounded-full bg-emerald-500 text-white text-[10px] flex items-center justify-center font-black shadow-sm">✓</span>
+            </div>
+            <div data-limit-val="15" class="cartoon-pill limit-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-slate-300 bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm">
+              <span class="flex items-center gap-1.5"><span>🌟</span> 15 Soal</span>
+              <span class="limit-check w-4 h-4 rounded-full bg-emerald-500 text-white text-[10px] items-center justify-center font-black shadow-sm hidden">✓</span>
+            </div>
+            <div data-limit-val="20" class="cartoon-pill limit-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-slate-300 bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm">
+              <span class="flex items-center gap-1.5"><span>🏆</span> 20 Soal</span>
+              <span class="limit-check w-4 h-4 rounded-full bg-emerald-500 text-white text-[10px] items-center justify-center font-black shadow-sm hidden">✓</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Layar Sentuh IFP / Smartboard Toggle -->
+        <div id="ifpTouchRow" class="cartoon-pill p-2.5 rounded-2xl bg-sky-50 border-2 border-sky-300 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-sky-500 text-white flex items-center justify-center text-lg shadow-sm">
+              🖥️
+            </div>
+            <div>
+              <div class="text-xs font-black text-sky-950 uppercase tracking-wider">LAYAR SENTUH (PID / IFP)</div>
+              <p class="text-[11px] text-slate-500 leading-tight">Tampilkan tombol D-Pad ganda di layar untuk interaksi sentuh.</p>
+            </div>
+          </div>
+          <input type="checkbox" id="ifpTouchCheckbox" checked class="hidden">
+          <div id="ifpSquareCheck" class="w-6 h-6 rounded-lg bg-emerald-500 text-white text-sm flex items-center justify-center font-black shadow-sm shrink-0">
+            ✓
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-2 flex flex-col sm:flex-row gap-3 items-center justify-center">
+          <button type="button" id="menuFullscreenBtn" class="w-full sm:w-auto px-6 py-3 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-black text-sm shadow-md flex items-center justify-center gap-2 border-2 border-white/50 transition transform hover:scale-105 active:scale-95">
+            <span>⛶</span> <span>Fullscreen</span>
+          </button>
+          
+          <button type="button" id="startGameBtn" class="w-full sm:flex-1 py-3 px-8 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 hover:from-amber-300 hover:to-orange-400 text-white font-black text-lg shadow-xl shadow-orange-500/40 flex items-center justify-center gap-2 border-3 border-white transition transform hover:scale-105 active:scale-95 uppercase tracking-wider">
+            <span>▶</span> <span>MULAI MAIN</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="gameModal" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border-2 border-cyan-400 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl relative">
+      <div id="modalIcon" class="text-5xl mb-3">🎮</div>
+      <h2 id="modalTitle" class="text-2xl font-black text-cyan-300 mb-2 neon-glow-text">GAME OVER</h2>
+      <p id="modalDesc" class="text-slate-300 text-sm mb-4 leading-relaxed">Monster berhasil menangkapmu! Terus latih ketangkasan matematika dan strategimu.</p>
+      
+      <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 mb-5 flex justify-around text-center">
+        <div>
+          <div class="text-xs text-slate-400">Skor Akhir</div>
+          <div id="finalScore" class="font-arcade text-yellow-400 text-xl mt-1">0</div>
+        </div>
+        <div class="border-r border-slate-800"></div>
+        <div>
+          <div class="text-xs text-slate-400">Soal Terjawab</div>
+          <div id="finalQuestions" class="font-arcade text-green-400 text-xl mt-1">0</div>
+        </div>
+      </div>
+
+      <button id="modalActionBtn" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 font-bold text-white text-base shadow-lg shadow-cyan-500/30 transition transform hover:-translate-y-0.5 active:translate-y-0">
+        Main Lagi
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Web Audio Synthesizer for high-fidelity arcade sound without external audio files
+    class SoundFx {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      beep(freq, duration = 0.08, type = 'sine', decay = true) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          
+          gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+          if (decay) {
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+          }
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {
+          console.warn('Audio play error:', e);
+        }
+      }
+      correct() {
+        if (!this.enabled) return;
+        this.init();
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+          setTimeout(() => this.beep(freq, 0.12, 'triangle'), i * 80);
+        });
+      }
+      wrong() {
+        if (!this.enabled) return;
+        this.init();
+        [240, 180, 120].forEach((freq, i) => {
+          setTimeout(() => this.beep(freq, 0.15, 'sawtooth'), i * 110);
+        });
+      }
+      hit() {
+        if (!this.enabled) return;
+        this.init();
+        this.beep(90, 0.3, 'square');
+      }
+      step() {
+        // Subtle move chime
+        this.beep(330, 0.03, 'sine');
+      }
+    }
+    const sound = new SoundFx();
+
+    // 0 = Walkable Path
+    // 1 = Wall (Neon Blue)
+    // 2 = Ghost Pen Interior / Spawn
+    // Dimensions: 23 columns x 26 rows
+    // Accurate architectural replica of the provided Pac-Man blueprint with double perimeter lines, T-bars, side wrap-arounds, and center house
+    const RAW_MAZE = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,1,0,1],
+      [1,0,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,0,1],
+      [1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1],
+      [1,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,1,1,1],
+      [1,1,1,1,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,1],
+      [1,1,1,1,1,0,1,0,1,1,1,0,1,1,1,0,1,0,1,1,1,1,1],
+      [0,0,0,0,0,0,0,0,1,2,2,2,2,2,1,0,0,0,0,0,0,0,0], // Side tunnel horizontal exit
+      [1,1,1,1,1,0,1,0,1,2,2,2,2,2,1,0,1,0,1,1,1,1,1],
+      [1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1],
+      [0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0], // Mid tunnel
+      [1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,1,0,1],
+      [1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
+      [1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,0,1,1,1],
+      [1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1],
+      [1,0,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,0,1],
+      [1,0,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    const COLS = RAW_MAZE[0].length;
+    const ROWS = RAW_MAZE.length;
+
+    // Game Configuration State
+    const gameConfig = {
+      is2P: false,
+      difficulty: 'medium', // 'easy', 'medium', 'hard'
+      allowedOps: ['+', '-', '×', '÷'],
+      showTouchControls: true,
+      questionLimit: 10
+    };
+
+    class MathEngine {
+      static generate(level = 1) {
+        let ops = gameConfig.allowedOps;
+        if (!ops || ops.length === 0) ops = ['+'];
+        
+        const op = ops[Math.floor(Math.random() * ops.length)];
+        let num1, num2, answer, questionText;
+
+        const diff = gameConfig.difficulty;
+        let scale = diff === 'easy' ? 0.6 : (diff === 'hard' ? 1.5 : 1.0);
+
+        if (op === '+') {
+          const maxNum = Math.floor((12 + level * 4) * scale) + 5;
+          num1 = Math.floor(Math.random() * maxNum) + 2;
+          num2 = Math.floor(Math.random() * maxNum) + 2;
+          answer = num1 + num2;
+          questionText = `${num1} + ${num2} = ?`;
+        } else if (op === '-') {
+          const maxNum = Math.floor((16 + level * 5) * scale) + 6;
+          num1 = Math.floor(Math.random() * maxNum) + 5;
+          num2 = Math.floor(Math.random() * (num1 - 1)) + 1;
+          answer = num1 - num2;
+          questionText = `${num1} - ${num2} = ?`;
+        } else if (op === '×') {
+          const maxFactor = diff === 'easy' ? 5 : (diff === 'hard' ? 12 : 9);
+          num1 = Math.floor(Math.random() * (maxFactor - 1)) + 2;
+          num2 = Math.floor(Math.random() * (maxFactor - 1)) + 2;
+          answer = num1 * num2;
+          questionText = `${num1} × ${num2} = ?`;
+        } else { // Division
+          const maxFactor = diff === 'easy' ? 5 : (diff === 'hard' ? 10 : 8);
+          num2 = Math.floor(Math.random() * (maxFactor - 1)) + 2;
+          answer = Math.floor(Math.random() * (maxFactor - 1)) + 2;
+          num1 = num2 * answer;
+          questionText = `${num1} ÷ ${num2} = ?`;
+        }
+
+        // Generate 3 unique distractors
+        const choicesSet = new Set([answer]);
+        const offsets = [-2, -1, 1, 2, 3, -3, 5, -5, 10, -10];
+        
+        while (choicesSet.size < 4) {
+          const randOffset = offsets[Math.floor(Math.random() * offsets.length)];
+          let fake = answer + randOffset;
+          if (fake <= 0) fake = answer + Math.floor(Math.random() * 8) + 1;
+          choicesSet.add(fake);
+        }
+
+        const choicesArray = Array.from(choicesSet);
+        // Shuffle array
+        for (let i = choicesArray.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [choicesArray[i], choicesArray[j]] = [choicesArray[j], choicesArray[i]];
+        }
+
+        const labels = ['A', 'B', 'C', 'D'];
+        const options = choicesArray.map((val, idx) => ({
+          label: labels[idx],
+          val: val,
+          isCorrect: val === answer
+        }));
+
+        return {
+          questionText,
+          answer,
+          options
+        };
+      }
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let TILE_SIZE = 20;
+    let score = 0;
+    let scoreP2 = 0;
+    let lives = 3;
+    let livesP2 = 3;
+    let level = 1;
+    let questionsSolved = 0;
+    let currentQuiz = null;
+    let particles = [];
+    let isGameOver = false;
+    let isPaused = false;
+    let invulnerableTimer = 0;
+    let invulnerableTimerP2 = 0;
+
+    // Fixed 4 strategic target zones in the 4 quadrants of the maze
+    const QUADRANT_CANDIDATES = [
+      // Top-Left
+      [{x: 1, y: 1}, {x: 1, y: 4}, {x: 5, y: 1}, {x: 5, y: 4}],
+      // Top-Right
+      [{x: 21, y: 1}, {x: 21, y: 4}, {x: 17, y: 1}, {x: 17, y: 4}],
+      // Bottom-Left
+      [{x: 1, y: 17}, {x: 1, y: 22}, {x: 5, y: 19}, {x: 3, y: 22}],
+      // Bottom-Right
+      [{x: 21, y: 17}, {x: 21, y: 22}, {x: 17, y: 19}, {x: 19, y: 22}]
+    ];
+
+    let answerItems = []; // { x, y, label, val, isCorrect, pulse }
+
+    // Player 1 (Yellow Pac-Man)
+    const player = {
+      id: 1,
+      name: 'P1',
+      x: 11,
+      y: 17,
+      px: 11 * 20,
+      py: 17 * 20,
+      speed: 2.2,
+      dirX: 0,
+      dirY: 0,
+      nextDirX: 0,
+      nextDirY: 0,
+      radius: 8,
+      mouthAngle: 0.2,
+      mouthSpeed: 0.08,
+      color: '#fbbf24',
+      glow: '#facc15'
+    };
+
+    // Player 2 (Emerald / Green Pac-Man for 2P mode)
+    const player2 = {
+      id: 2,
+      name: 'P2',
+      x: 11,
+      y: 4,
+      px: 11 * 20,
+      py: 4 * 20,
+      speed: 2.2,
+      dirX: 0,
+      dirY: 0,
+      nextDirX: 0,
+      nextDirY: 0,
+      radius: 8,
+      mouthAngle: 0.2,
+      mouthSpeed: 0.08,
+      color: '#34d399',
+      glow: '#10b981'
+    };
+
+    // Monsters (Ghosts)
+    const MONSTER_COLORS = [
+      { body: '#ef4444', glow: 'rgba(239, 68, 68, 0.7)', name: 'Blinky' },
+      { body: '#ec4899', glow: 'rgba(236, 72, 153, 0.7)', name: 'Pinky' },
+      { body: '#06b6d4', glow: 'rgba(6, 182, 212, 0.7)', name: 'Inky' }
+    ];
+
+    let monsters = [];
+
+    function initMonsters() {
+      const diffMultiplier = gameConfig.difficulty === 'easy' ? 0.8 : (gameConfig.difficulty === 'hard' ? 1.25 : 1.0);
+      const currentSpeed = (1.3 + Math.min(level * 0.12, 0.9)) * diffMultiplier;
+      monsters = [
+        {
+          x: 11, y: 8, targetX: 11, targetY: 7,
+          px: 11 * TILE_SIZE, py: 8 * TILE_SIZE,
+          dirX: 0, dirY: -1, speed: currentSpeed,
+          color: MONSTER_COLORS[0],
+          personality: 'chaser'
+        },
+        {
+          x: 9, y: 8, targetX: 8, targetY: 8,
+          px: 9 * TILE_SIZE, py: 8 * TILE_SIZE,
+          dirX: -1, dirY: 0, speed: currentSpeed * 0.95,
+          color: MONSTER_COLORS[1],
+          personality: 'flanker'
+        },
+        {
+          x: 13, y: 8, targetX: 14, targetY: 8,
+          px: 13 * TILE_SIZE, py: 8 * TILE_SIZE,
+          dirX: 1, dirY: 0, speed: currentSpeed * 0.92,
+          color: MONSTER_COLORS[2],
+          personality: 'roamer'
+        }
+      ];
+    }
+
+    function resizeCanvas() {
+      const isLandscapeLarge = window.innerWidth >= 1024;
+      const horizontalDpadAllowance = (gameConfig.showTouchControls && isLandscapeLarge) ? (gameConfig.is2P ? 420 : 220) : 40;
+      const safeWidth = Math.max(260, window.innerWidth - horizontalDpadAllowance);
+      const maxHeight = window.innerHeight > 0 ? (window.innerHeight - 170) : 560;
+
+      const aspect = ROWS / COLS;
+      let targetW = Math.min(safeWidth, 480);
+      let targetH = Math.round(targetW * aspect);
+
+      if (targetH > maxHeight) {
+        targetH = maxHeight;
+        targetW = Math.round(targetH / aspect);
+      }
+
+      canvas.width = Math.max(260, targetW);
+      canvas.height = Math.max(300, targetH);
+      TILE_SIZE = Math.max(12, canvas.width / COLS);
+      
+      // Update entities pixel positions
+      player.px = player.x * TILE_SIZE;
+      player.py = player.y * TILE_SIZE;
+      player.radius = Math.max(4, TILE_SIZE * 0.42);
+
+      player2.px = player2.x * TILE_SIZE;
+      player2.py = player2.y * TILE_SIZE;
+      player2.radius = Math.max(4, TILE_SIZE * 0.42);
+
+      monsters.forEach(m => {
+        m.px = m.x * TILE_SIZE;
+        m.py = m.y * TILE_SIZE;
+      });
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function spawnQuestion() {
+      currentQuiz = MathEngine.generate(level);
+      
+      // Update HUD Question
+      const qEl = document.getElementById('mathQuestion');
+      if (qEl) {
+        qEl.innerText = currentQuiz.questionText;
+      }
+
+      // Place 4 answer items in the 4 maze quadrants
+      answerItems = [];
+
+      currentQuiz.options.forEach((opt, idx) => {
+        // pick random candidate spot in this quadrant
+        const spots = QUADRANT_CANDIDATES[idx];
+        const pick = spots[Math.floor(Math.random() * spots.length)];
+
+        answerItems.push({
+          x: pick.x,
+          y: pick.y,
+          label: opt.label,
+          val: opt.val,
+          isCorrect: opt.isCorrect,
+          pulse: Math.random() * Math.PI * 2
+        });
+      });
+    }
+
+    function updateLivesDisplay() {
+      const cont = document.getElementById('livesContainer');
+      cont.innerHTML = '';
+      for (let i = 0; i < 3; i++) {
+        const heart = document.createElement('span');
+        heart.className = `text-sm ${i < lives ? 'text-red-500 scale-100' : 'text-slate-700 scale-75'}`;
+        heart.innerText = '♥';
+        cont.appendChild(heart);
+      }
+
+      if (gameConfig.is2P) {
+        const cont2 = document.getElementById('livesContainerP2');
+        cont2.innerHTML = '';
+        for (let i = 0; i < 3; i++) {
+          const heart = document.createElement('span');
+          heart.className = `text-sm ${i < livesP2 ? 'text-emerald-400 scale-100' : 'text-slate-700 scale-75'}`;
+          heart.innerText = '♥';
+          cont2.appendChild(heart);
+        }
+      }
+    }
+
+    function updateQuestionProgressDisplay() {
+      const qp = document.getElementById('questionProgressDisplay');
+      if (qp) {
+        qp.innerText = `${questionsSolved}/${gameConfig.questionLimit}`;
+      }
+    }
+
+    function showFeedback(text, isPositive) {
+      const fb = document.getElementById('feedbackToast');
+      fb.innerText = text;
+      fb.className = `absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-300 font-arcade text-lg md:text-2xl px-6 py-3 rounded-2xl border-2 backdrop-blur-md opacity-100 scale-105 ${
+        isPositive ? 'text-green-400 bg-green-950/80 border-green-500 neon-glow-green' : 'text-red-400 bg-red-950/80 border-red-500 neon-glow-red'
+      }`;
+      setTimeout(() => {
+        fb.classList.remove('opacity-100', 'scale-105');
+        fb.classList.add('opacity-0', 'scale-90');
+      }, 900);
+    }
+
+    function addParticles(x, y, color, count = 16) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 4 + 1.5;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          radius: Math.random() * 3 + 1.5,
+          color: color,
+          life: 1.0,
+          decay: Math.random() * 0.03 + 0.02
+        });
+      }
+    }
+
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= p.decay;
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(0.5, p.radius), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    function isWalkable(gx, gy, allowPen = false) {
+      // Horizontal wrap around tunnels
+      if (gx < 0 || gx >= COLS) return true;
+      if (gy < 0 || gy >= ROWS) return false;
+      const tile = RAW_MAZE[gy][gx];
+      if (tile === 0) return true;
+      if (tile === 2 && allowPen) return true;
+      return false;
+    }
+
+    function updateSinglePlayer(p, invulnTimerKey) {
+      // Check wrap-around tunnels
+      if (p.px < -TILE_SIZE / 2) p.px = (COLS - 0.5) * TILE_SIZE;
+      if (p.px > (COLS - 0.5) * TILE_SIZE) p.px = -TILE_SIZE / 2;
+
+      const currentGridX = Math.round(p.px / TILE_SIZE);
+      const currentGridY = Math.round(p.py / TILE_SIZE);
+      const centerX = currentGridX * TILE_SIZE;
+      const centerY = currentGridY * TILE_SIZE;
+      const distToCenter = Math.hypot(p.px - centerX, p.py - centerY);
+
+      // Check if we can apply buffered direction
+      if (p.nextDirX !== 0 || p.nextDirY !== 0) {
+        if (p.nextDirX === -p.dirX && p.nextDirY === -p.dirY) {
+          p.dirX = p.nextDirX;
+          p.dirY = p.nextDirY;
+          p.nextDirX = 0;
+          p.nextDirY = 0;
+        } else if (distToCenter < p.speed * 1.5) {
+          const targetX = currentGridX + p.nextDirX;
+          const targetY = currentGridY + p.nextDirY;
+          if (isWalkable(targetX, targetY)) {
+            p.px = centerX;
+            p.py = centerY;
+            p.dirX = p.nextDirX;
+            p.dirY = p.nextDirY;
+            p.nextDirX = 0;
+            p.nextDirY = 0;
+          }
+        }
+      }
+
+      // Check wall ahead in current direction
+      if (p.dirX !== 0 || p.dirY !== 0) {
+        const nextX = currentGridX + p.dirX;
+        const nextY = currentGridY + p.dirY;
+
+        if (!isWalkable(nextX, nextY)) {
+          if ((p.dirX > 0 && p.px >= centerX) ||
+              (p.dirX < 0 && p.px <= centerX) ||
+              (p.dirY > 0 && p.py >= centerY) ||
+              (p.dirY < 0 && p.py <= centerY)) {
+            p.px = centerX;
+            p.py = centerY;
+            p.dirX = 0;
+            p.dirY = 0;
+          }
+        }
+      }
+
+      p.px += p.dirX * p.speed;
+      p.py += p.dirY * p.speed;
+      p.x = Math.round(p.px / TILE_SIZE);
+      p.y = Math.round(p.py / TILE_SIZE);
+
+      p.mouthAngle += p.mouthSpeed;
+      if (p.mouthAngle > 0.45 || p.mouthAngle < 0.05) {
+        p.mouthSpeed = -p.mouthSpeed;
+      }
+
+      // Check collision with Answer Pellets
+      for (let i = answerItems.length - 1; i >= 0; i--) {
+        const item = answerItems[i];
+        const itemPx = (item.x + 0.5) * TILE_SIZE;
+        const itemPy = (item.y + 0.5) * TILE_SIZE;
+        const centerPx = p.px + TILE_SIZE * 0.5;
+        const centerPy = p.py + TILE_SIZE * 0.5;
+
+        if (Math.hypot(centerPx - itemPx, centerPy - itemPy) < TILE_SIZE * 0.65) {
+          handleAnswerChosen(item, p.id);
+          break;
+        }
+      }
+    }
+
+    function updatePlayers() {
+      if (lives > 0) {
+        updateSinglePlayer(player, 'invulnerableTimer');
+      }
+      if (gameConfig.is2P && livesP2 > 0) {
+        updateSinglePlayer(player2, 'invulnerableTimerP2');
+      }
+
+      if (invulnerableTimer > 0) invulnerableTimer--;
+      if (invulnerableTimerP2 > 0) invulnerableTimerP2--;
+    }
+
+    function handleAnswerChosen(item, playerId = 1) {
+      const itemPx = (item.x + 0.5) * TILE_SIZE;
+      const itemPy = (item.y + 0.5) * TILE_SIZE;
+      const isP1 = playerId === 1;
+
+      if (item.isCorrect) {
+        if (isP1) {
+          score += 10;
+        } else {
+          scoreP2 += 10;
+        }
+        questionsSolved++;
+        updateQuestionProgressDisplay();
+        sound.correct();
+        addParticles(itemPx, itemPy, '#4ade80', 25);
+        showFeedback(`${isP1 ? 'P1' : 'P2'}: +10 BENAR!`, true);
+
+        // Cek apakah sudah mencapai target jumlah soal
+        if (questionsSolved >= gameConfig.questionLimit) {
+          setTimeout(() => {
+            triggerVictory();
+          }, 450);
+          return;
+        }
+
+        if (questionsSolved % 3 === 0) {
+          level++;
+          document.getElementById('levelDisplay').innerText = level;
+        }
+      } else {
+        if (isP1) {
+          score = Math.max(0, score - 5);
+        } else {
+          scoreP2 = Math.max(0, scoreP2 - 5);
+        }
+        sound.wrong();
+        addParticles(itemPx, itemPy, '#ef4444', 20);
+        showFeedback(`${isP1 ? 'P1' : 'P2'}: -5 SALAH!`, false);
+      }
+
+      document.getElementById('scoreDisplay').innerText = score;
+      if (gameConfig.is2P) {
+        document.getElementById('scoreDisplayP2').innerText = scoreP2;
+      }
+      spawnQuestion();
+    }
+
+    function getBestMonsterStep(startX, startY, targetX, targetY, currentDirX, currentDirY) {
+      const cardinalDirs = [
+        { x: 0, y: -1 },
+        { x: 0, y: 1 },
+        { x: -1, y: 0 },
+        { x: 1, y: 0 }
+      ];
+
+      // Filter walkable directions, avoiding immediate U-turns unless trapped
+      let validDirs = cardinalDirs.filter(d => {
+        if (d.x === -currentDirX && d.y === -currentDirY) return false;
+        return isWalkable(startX + d.x, startY + d.y);
+      });
+
+      if (validDirs.length === 0) {
+        validDirs = cardinalDirs.filter(d => isWalkable(startX + d.x, startY + d.y));
+      }
+
+      if (validDirs.length === 0) return { x: 0, y: 0 };
+      if (validDirs.length === 1) return validDirs[0];
+
+      // Breadth-First Search (BFS) to find optimal route to the player in the maze
+      const queue = [];
+      const visited = new Uint8Array(COLS * ROWS);
+      visited[startY * COLS + startX] = 1;
+
+      for (const d of validDirs) {
+        const nx = startX + d.x;
+        const ny = startY + d.y;
+        if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+          visited[ny * COLS + nx] = 1;
+          queue.push({ x: nx, y: ny, initialDir: d, dist: 1 });
+        }
+      }
+
+      while (queue.length > 0) {
+        const curr = queue.shift();
+        if (curr.x === targetX && curr.y === targetY) {
+          return curr.initialDir;
+        }
+
+        if (curr.dist < 28) {
+          for (const d of cardinalDirs) {
+            const nx = curr.x + d.x;
+            const ny = curr.y + d.y;
+            if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && isWalkable(nx, ny)) {
+              const idx = ny * COLS + nx;
+              if (!visited[idx]) {
+                visited[idx] = 1;
+                queue.push({ x: nx, y: ny, initialDir: curr.initialDir, dist: curr.dist + 1 });
+              }
+            }
+          }
+        }
+      }
+
+      // Fallback: Choose candidate direction with minimum Euclidean distance to target
+      validDirs.sort((a, b) => {
+        const distA = Math.hypot((startX + a.x) - targetX, (startY + a.y) - targetY);
+        const distB = Math.hypot((startX + b.x) - targetX, (startY + b.y) - targetY);
+        return distA - distB;
+      });
+      return validDirs[0];
+    }
+
+    function updateMonsters() {
+      monsters.forEach(m => {
+        const targetPx = m.targetX * TILE_SIZE;
+        const targetPy = m.targetY * TILE_SIZE;
+        const dx = targetPx - m.px;
+        const dy = targetPy - m.py;
+        const distToTarget = Math.hypot(dx, dy);
+
+        // Monster arrived at grid intersection waypoint
+        if (distToTarget <= m.speed) {
+          m.px = targetPx;
+          m.py = targetPy;
+          m.x = m.targetX;
+          m.y = m.targetY;
+
+          // Pick closest active player as target
+          let targetP = player;
+          if (gameConfig.is2P) {
+            if (lives <= 0) targetP = player2;
+            else if (livesP2 <= 0) targetP = player;
+            else {
+              const d1 = Math.hypot(m.x - player.x, m.y - player.y);
+              const d2 = Math.hypot(m.x - player2.x, m.y - player2.y);
+              targetP = d1 <= d2 ? player : player2;
+            }
+          }
+
+          let targetGoalX = targetP.x;
+          let targetGoalY = targetP.y;
+
+          if (m.personality === 'flanker') {
+            targetGoalX = Math.max(0, Math.min(COLS - 1, targetP.x + (targetP.dirX || 1) * 3));
+            targetGoalY = Math.max(0, Math.min(ROWS - 1, targetP.y + (targetP.dirY || 0) * 3));
+          } else if (m.personality === 'roamer') {
+            if (answerItems.length > 0 && Math.random() < 0.4) {
+              targetGoalX = answerItems[0].x;
+              targetGoalY = answerItems[0].y;
+            }
+          }
+
+          const nextStep = getBestMonsterStep(m.x, m.y, targetGoalX, targetGoalY, m.dirX, m.dirY);
+          m.dirX = nextStep.x;
+          m.dirY = nextStep.y;
+
+          let nextGridX = m.x + m.dirX;
+          let nextGridY = m.y + m.dirY;
+
+          if (nextGridX < 0) {
+            m.x = COLS - 1;
+            m.px = m.x * TILE_SIZE;
+            nextGridX = COLS - 2;
+          } else if (nextGridX >= COLS) {
+            m.x = 0;
+            m.px = 0;
+            nextGridX = 1;
+          }
+
+          m.targetX = nextGridX;
+          m.targetY = nextGridY;
+        } else {
+          m.px += (dx / distToTarget) * m.speed;
+          m.py += (dy / distToTarget) * m.speed;
+        }
+
+        const monsterCenterPx = m.px + TILE_SIZE * 0.5;
+        const monsterCenterPy = m.py + TILE_SIZE * 0.5;
+
+        // Check collision with Player 1
+        if (lives > 0 && invulnerableTimer === 0) {
+          const p1CenterPx = player.px + TILE_SIZE * 0.5;
+          const p1CenterPy = player.py + TILE_SIZE * 0.5;
+          if (Math.hypot(p1CenterPx - monsterCenterPx, p1CenterPy - monsterCenterPy) < TILE_SIZE * 0.72) {
+            handlePlayerHit(1);
+          }
+        }
+
+        // Check collision with Player 2
+        if (gameConfig.is2P && livesP2 > 0 && invulnerableTimerP2 === 0) {
+          const p2CenterPx = player2.px + TILE_SIZE * 0.5;
+          const p2CenterPy = player2.py + TILE_SIZE * 0.5;
+          if (Math.hypot(p2CenterPx - monsterCenterPx, p2CenterPy - monsterCenterPy) < TILE_SIZE * 0.72) {
+            handlePlayerHit(2);
+          }
+        }
+      });
+    }
+
+    function handlePlayerHit(playerId = 1) {
+      sound.hit();
+      if (playerId === 1) {
+        lives--;
+        invulnerableTimer = 90;
+        addParticles(player.px + TILE_SIZE / 2, player.py + TILE_SIZE / 2, '#facc15', 30);
+        showFeedback(gameConfig.is2P ? 'P1 TERKENA MONSTER!' : 'TERKENA MONSTER!', false);
+        // Reset player 1 pos
+        player.x = 11;
+        player.y = 17;
+        player.px = 11 * TILE_SIZE;
+        player.py = 17 * TILE_SIZE;
+        player.dirX = 0;
+        player.dirY = 0;
+        player.nextDirX = 0;
+        player.nextDirY = 0;
+      } else {
+        livesP2--;
+        invulnerableTimerP2 = 90;
+        addParticles(player2.px + TILE_SIZE / 2, player2.py + TILE_SIZE / 2, '#34d399', 30);
+        showFeedback('P2 TERKENA MONSTER!', false);
+        // Reset player 2 pos
+        player2.x = 11;
+        player2.y = 4;
+        player2.px = 11 * TILE_SIZE;
+        player2.py = 4 * TILE_SIZE;
+        player2.dirX = 0;
+        player2.dirY = 0;
+        player2.nextDirX = 0;
+        player2.nextDirY = 0;
+      }
+
+      updateLivesDisplay();
+
+      // Check Game Over condition
+      if (gameConfig.is2P) {
+        if (lives <= 0 && livesP2 <= 0) {
+          triggerGameOver();
+        }
+      } else {
+        if (lives <= 0) {
+          triggerGameOver();
+        }
+      }
+    }
+
+    function triggerVictory() {
+      isGameOver = true;
+      const modalIcon = document.getElementById('modalIcon');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalDesc = document.getElementById('modalDesc');
+
+      if (modalIcon) modalIcon.innerText = '🏆';
+
+      if (gameConfig.is2P) {
+        if (score > scoreP2) {
+          modalTitle.innerText = '🎉 TARGET SELESAI: P1 JUARA!';
+          modalTitle.className = 'text-2xl font-black text-yellow-400 mb-2 neon-glow-text';
+          modalDesc.innerText = `Semua ${gameConfig.questionLimit} soal berhasil dijawab! Player 1 unggul dengan skor ${score} vs ${scoreP2}.`;
+        } else if (scoreP2 > score) {
+          modalTitle.innerText = '🎉 TARGET SELESAI: P2 JUARA!';
+          modalTitle.className = 'text-2xl font-black text-emerald-400 mb-2 neon-glow-green';
+          modalDesc.innerText = `Semua ${gameConfig.questionLimit} soal berhasil dijawab! Player 2 unggul dengan skor ${scoreP2} vs ${score}.`;
+        } else {
+          modalTitle.innerText = '🤝 TARGET SELESAI: SKOR IMBANG!';
+          modalTitle.className = 'text-2xl font-black text-cyan-300 mb-2 neon-glow-text';
+          modalDesc.innerText = `Semua ${gameConfig.questionLimit} soal terjawab dengan skor sama kuat (${score} vs ${scoreP2})!`;
+        }
+      } else {
+        modalTitle.innerText = '🎉 MISI SELESAI!';
+        modalTitle.className = 'text-2xl font-black text-green-400 mb-2 neon-glow-green';
+        modalDesc.innerText = `Luar biasa! Kamu berhasil menuntaskan seluruh ${gameConfig.questionLimit} soal matematika dengan skor ${score}!`;
+      }
+
+      document.getElementById('finalScore').innerText = gameConfig.is2P ? `${score} vs ${scoreP2}` : score;
+      document.getElementById('finalQuestions').innerText = `${questionsSolved}/${gameConfig.questionLimit}`;
+      document.getElementById('modalActionBtn').innerText = 'Main Lagi';
+      document.getElementById('gameModal').classList.remove('hidden');
+    }
+
+    function triggerGameOver() {
+      isGameOver = true;
+      const modalIcon = document.getElementById('modalIcon');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalDesc = document.getElementById('modalDesc');
+
+      if (modalIcon) modalIcon.innerText = '👾';
+
+      if (gameConfig.is2P) {
+        let winnerText = '';
+        if (score > scoreP2) {
+          winnerText = '🏆 PLAYER 1 (KUNING) MENANG!';
+          modalTitle.className = 'text-2xl font-black text-yellow-400 mb-2 neon-glow-text';
+        } else if (scoreP2 > score) {
+          winnerText = '🏆 PLAYER 2 (HIJAU) MENANG!';
+          modalTitle.className = 'text-2xl font-black text-emerald-400 mb-2 neon-glow-green';
+        } else {
+          winnerText = '🤝 PERMAINAN SERI!';
+          modalTitle.className = 'text-2xl font-black text-cyan-300 mb-2 neon-glow-text';
+        }
+        modalTitle.innerText = winnerText;
+        modalDesc.innerText = `Skor P1: ${score} | Skor P2: ${scoreP2}. Kedua petualang telah berjuang hebat!`;
+      } else {
+        modalTitle.innerText = 'GAME OVER';
+        modalTitle.className = 'text-2xl font-black text-red-400 mb-2 neon-glow-red';
+        modalDesc.innerText = 'Semua nyawa habis! Terus berlatih agar semakin cepat berhitung dan menghindari monster.';
+      }
+
+      document.getElementById('finalScore').innerText = gameConfig.is2P ? `${score} vs ${scoreP2}` : score;
+      document.getElementById('finalQuestions').innerText = `${questionsSolved}/${gameConfig.questionLimit}`;
+      document.getElementById('modalActionBtn').innerText = 'Coba Lagi';
+      document.getElementById('gameModal').classList.remove('hidden');
+    }
+
+    function drawMaze() {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.lineWidth = Math.max(2, TILE_SIZE * 0.12);
+      ctx.strokeStyle = '#0084ff';
+      ctx.shadowColor = '#00b4ff';
+      ctx.shadowBlur = 10;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const tile = RAW_MAZE[r][c];
+          const x = c * TILE_SIZE;
+          const y = r * TILE_SIZE;
+
+          if (tile === 1) {
+            // Draw wall lines connecting adjacent wall neighbors
+            const top = (r > 0 && RAW_MAZE[r - 1][c] === 1);
+            const bottom = (r < ROWS - 1 && RAW_MAZE[r + 1][c] === 1);
+            const left = (c > 0 && RAW_MAZE[r][c - 1] === 1);
+            const right = (c < COLS - 1 && RAW_MAZE[r][c + 1] === 1);
+
+            const cx = x + TILE_SIZE / 2;
+            const cy = y + TILE_SIZE / 2;
+
+            ctx.beginPath();
+            if (top) { ctx.moveTo(cx, cy); ctx.lineTo(cx, y); }
+            if (bottom) { ctx.moveTo(cx, cy); ctx.lineTo(cx, y + TILE_SIZE); }
+            if (left) { ctx.moveTo(cx, cy); ctx.lineTo(x, cy); }
+            if (right) { ctx.moveTo(cx, cy); ctx.lineTo(x + TILE_SIZE, cy); }
+
+            // If isolated wall tile or corner anchor
+            if (!top && !bottom && !left && !right) {
+              ctx.arc(cx, cy, Math.max(1, TILE_SIZE * 0.2), 0, Math.PI * 2);
+            }
+            ctx.stroke();
+          } else if (tile === 2) {
+            // Ghost house interior door glow
+            if (r === 10 && (c === 11 || c === 12)) {
+              ctx.strokeStyle = '#f472b6';
+              ctx.beginPath();
+              ctx.moveTo(x, y + TILE_SIZE / 2);
+              ctx.lineTo(x + TILE_SIZE, y + TILE_SIZE / 2);
+              ctx.stroke();
+              ctx.strokeStyle = '#0084ff'; // restore
+            }
+          }
+        }
+      }
+
+      // Outer bounding neon frame
+      ctx.strokeStyle = '#0099ff';
+      ctx.shadowBlur = 12;
+      ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+      ctx.restore();
+    }
+
+    function drawAnswerItems() {
+      const now = performance.now() * 0.005;
+      answerItems.forEach(item => {
+        const cx = (item.x + 0.5) * TILE_SIZE;
+        const cy = (item.y + 0.5) * TILE_SIZE;
+        const pulse = Math.sin(now + item.pulse) * 1.5;
+        // Ukuran orb yang lapang untuk fokus menampilkan angka
+        const radius = Math.max(8, (TILE_SIZE * 0.48) + pulse);
+
+        ctx.save();
+        // Glow circle
+        ctx.shadowBlur = 14;
+        ctx.shadowColor = '#38bdf8';
+        ctx.fillStyle = '#0284c7';
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Border putih tebal mengkilap
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Font angka dibuat maksimal, tebal (900), dan proporsional terhadap digit
+        const valStr = String(item.val);
+        let numFontSize = Math.max(14, Math.floor(TILE_SIZE * 0.72));
+        if (valStr.length >= 3) {
+          numFontSize = Math.max(12, Math.floor(TILE_SIZE * 0.55));
+        } else if (valStr.length === 2) {
+          numFontSize = Math.max(13, Math.floor(TILE_SIZE * 0.65));
+        }
+
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = '#000000';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `900 ${numFontSize}px Fredoka, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(item.val, cx, cy);
+
+        ctx.restore();
+      });
+    }
+
+    function renderPlayerEntity(p, timer) {
+      if (timer > 0 && Math.floor(timer / 6) % 2 === 0) {
+        return; // Flashing during invulnerability
+      }
+
+      const cx = p.px + TILE_SIZE / 2;
+      const cy = p.py + TILE_SIZE / 2;
+      const r = Math.max(4, p.radius);
+
+      let baseAngle = 0;
+      if (p.dirX === 1) baseAngle = 0;
+      else if (p.dirX === -1) baseAngle = Math.PI;
+      else if (p.dirY === 1) baseAngle = Math.PI * 0.5;
+      else if (p.dirY === -1) baseAngle = Math.PI * 1.5;
+
+      ctx.save();
+      ctx.shadowColor = p.glow;
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = p.color;
+
+      ctx.beginPath();
+      ctx.arc(
+        cx,
+        cy,
+        r,
+        baseAngle + p.mouthAngle,
+        baseAngle + Math.PI * 2 - p.mouthAngle,
+        false
+      );
+      ctx.lineTo(cx, cy);
+      ctx.closePath();
+      ctx.fill();
+
+      // Eye
+      const eyeX = cx + Math.cos(baseAngle - 0.7) * (r * 0.55);
+      const eyeY = cy + Math.sin(baseAngle - 0.7) * (r * 0.55);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(eyeX, eyeY, Math.max(1, r * 0.18), 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mini player badge overhead in 2P mode
+      if (gameConfig.is2P) {
+        ctx.font = 'bold 8px Fredoka, sans-serif';
+        ctx.fillStyle = p.color;
+        ctx.textAlign = 'center';
+        ctx.fillText(p.name, cx, cy - r - 3);
+      }
+
+      ctx.restore();
+    }
+
+    function drawPlayers() {
+      if (lives > 0) {
+        renderPlayerEntity(player, invulnerableTimer);
+      }
+      if (gameConfig.is2P && livesP2 > 0) {
+        renderPlayerEntity(player2, invulnerableTimerP2);
+      }
+    }
+
+    function drawMonsters() {
+      const now = performance.now() * 0.008;
+      monsters.forEach(m => {
+        const cx = m.px + TILE_SIZE / 2;
+        const cy = m.py + TILE_SIZE / 2;
+        const r = Math.max(4, TILE_SIZE * 0.44);
+
+        ctx.save();
+        ctx.shadowColor = m.color.glow;
+        ctx.shadowBlur = 14;
+        ctx.fillStyle = m.color.body;
+
+        // Ghost body top dome
+        ctx.beginPath();
+        ctx.arc(cx, cy - 2, r, Math.PI, 0, false);
+        // Ghost wavy bottom
+        const wave = Math.sin(now) * 2;
+        ctx.lineTo(cx + r, cy + r - 2);
+        ctx.lineTo(cx + r * 0.4, cy + r - 5 + wave);
+        ctx.lineTo(cx, cy + r - 2);
+        ctx.lineTo(cx - r * 0.4, cy + r - 5 - wave);
+        ctx.lineTo(cx - r, cy + r - 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Ghost eyes
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#ffffff';
+        const lookOffsetX = m.dirX * 2;
+        const lookOffsetY = m.dirY * 2;
+
+        ctx.beginPath();
+        ctx.arc(cx - r * 0.38, cy - 3, Math.max(1, r * 0.28), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx + r * 0.38, cy - 3, Math.max(1, r * 0.28), 0, Math.PI * 2);
+        ctx.fill();
+
+        // Pupil
+        ctx.fillStyle = '#0369a1';
+        ctx.beginPath();
+        ctx.arc(cx - r * 0.38 + lookOffsetX, cy - 3 + lookOffsetY, Math.max(0.5, r * 0.15), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx + r * 0.38 + lookOffsetX, cy - 3 + lookOffsetY, Math.max(0.5, r * 0.15), 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      });
+    }
+
+    function gameLoop() {
+      if (!isGameOver && !isPaused) {
+        updatePlayers();
+        updateMonsters();
+        updateParticles();
+      }
+
+      drawMaze();
+      drawAnswerItems();
+      drawPlayers();
+      drawMonsters();
+      drawParticles();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function handleP1Input(dx, dy) {
+      sound.step();
+      player.nextDirX = dx;
+      player.nextDirY = dy;
+    }
+
+    function handleP2Input(dx, dy) {
+      sound.step();
+      player2.nextDirX = dx;
+      player2.nextDirY = dy;
+    }
+
+    window.addEventListener('keydown', e => {
+      // If 2P mode: P1 uses WASD, P2 uses Arrow keys.
+      // If 1P mode: either WASD or Arrow keys control P1.
+      if (gameConfig.is2P) {
+        // Player 1 controls (WASD)
+        if (e.key === 'w' || e.key === 'W') { e.preventDefault(); handleP1Input(0, -1); }
+        else if (e.key === 's' || e.key === 'S') { e.preventDefault(); handleP1Input(0, 1); }
+        else if (e.key === 'a' || e.key === 'A') { e.preventDefault(); handleP1Input(-1, 0); }
+        else if (e.key === 'd' || e.key === 'D') { e.preventDefault(); handleP1Input(1, 0); }
+        // Player 2 controls (Arrow keys)
+        else if (e.key === 'ArrowUp') { e.preventDefault(); handleP2Input(0, -1); }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); handleP2Input(0, 1); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); handleP2Input(-1, 0); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); handleP2Input(1, 0); }
+      } else {
+        // Solo mode: accept both
+        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { e.preventDefault(); handleP1Input(0, -1); }
+        else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { e.preventDefault(); handleP1Input(0, 1); }
+        else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); handleP1Input(-1, 0); }
+        else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); handleP1Input(1, 0); }
+      }
+    });
+
+    /* ==========================================================
+       IFP MULTI-TOUCH ENGINE (SIMULTANEOUS 2-PLAYER SUPPORT)
+       ========================================================== */
+    // Attaches touch handlers to on-screen D-Pad buttons with multi-touch isolation
+    const allDpadButtons = document.querySelectorAll('.dpad-btn');
+    allDpadButtons.forEach(btn => {
+      const playerNum = parseInt(btn.getAttribute('data-player'), 10);
+      const dx = parseInt(btn.getAttribute('data-dx'), 10);
+      const dy = parseInt(btn.getAttribute('data-dy'), 10);
+
+      const triggerAction = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        btn.classList.add('active-touch');
+        if (playerNum === 2) {
+          handleP2Input(dx, dy);
+        } else {
+          handleP1Input(dx, dy);
+        }
+      };
+
+      const clearAction = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        btn.classList.remove('active-touch');
+      };
+
+      // Pointer events natively track separate pointer IDs on touchscreen IFP
+      btn.addEventListener('pointerdown', triggerAction, { passive: false });
+      btn.addEventListener('pointerup', clearAction, { passive: false });
+      btn.addEventListener('pointercancel', clearAction, { passive: false });
+      btn.addEventListener('pointerleave', clearAction, { passive: false });
+    });
+
+    // Multi-touch swipe directly on canvas for IFP (split left/right in 2P mode)
+    const activeCanvasTouches = new Map();
+
+    canvas.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      activeCanvasTouches.set(e.pointerId, {
+        startX: e.clientX,
+        startY: e.clientY,
+        playerTarget: (!gameConfig.is2P || e.clientX < window.innerWidth / 2) ? 1 : 2
+      });
+    }, { passive: false });
+
+    canvas.addEventListener('pointerup', e => {
+      if (activeCanvasTouches.has(e.pointerId)) {
+        const touch = activeCanvasTouches.get(e.pointerId);
+        const dx = e.clientX - touch.startX;
+        const dy = e.clientY - touch.startY;
+        const absX = Math.abs(dx);
+        const absY = Math.abs(dy);
+
+        if (Math.max(absX, absY) > 15) {
+          let stepX = 0, stepY = 0;
+          if (absX > absY) {
+            stepX = dx > 0 ? 1 : -1;
+          } else {
+            stepY = dy > 0 ? 1 : -1;
+          }
+
+          if (touch.playerTarget === 2 && gameConfig.is2P) {
+            handleP2Input(stepX, stepY);
+          } else {
+            handleP1Input(stepX, stepY);
+          }
+        }
+        activeCanvasTouches.delete(e.pointerId);
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('pointercancel', e => {
+      activeCanvasTouches.delete(e.pointerId);
+    }, { passive: false });
+
+    // Update D-Pad visibility based on IFP setting
+    function updateTouchControlsVisibility() {
+      const p1Wrapper = document.getElementById('p1TouchWrapper');
+      const p2Wrapper = document.getElementById('p2TouchWrapper');
+      const p1Title = document.getElementById('p1PadTitle');
+
+      if (!p1Wrapper) return;
+
+      if (!gameConfig.showTouchControls) {
+        p1Wrapper.classList.add('hidden');
+        if (p2Wrapper) p2Wrapper.classList.add('hidden');
+        return;
+      }
+
+      p1Wrapper.classList.remove('hidden');
+      if (gameConfig.is2P && p2Wrapper) {
+        p2Wrapper.classList.remove('hidden');
+        p2Wrapper.classList.add('flex');
+        if (p1Title) p1Title.innerText = 'KONTROL SENTUH P1';
+      } else if (p2Wrapper) {
+        p2Wrapper.classList.add('hidden');
+        p2Wrapper.classList.remove('flex');
+        if (p1Title) p1Title.innerText = 'KONTROL SENTUH';
+      }
+      resizeCanvas();
+    }
+
+    // Toggle touch controls button in header
+    const toggleTouchBtn = document.getElementById('toggleTouchBtn');
+    if (toggleTouchBtn) {
+      toggleTouchBtn.addEventListener('click', () => {
+        gameConfig.showTouchControls = !gameConfig.showTouchControls;
+        const checkbox = document.getElementById('ifpTouchCheckbox');
+        if (checkbox) checkbox.checked = gameConfig.showTouchControls;
+        updateTouchControlsVisibility();
+      });
+    }
+
+    // Fullscreen Toggle Helper
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+    }
+
+    document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+    document.getElementById('menuFullscreenBtn').addEventListener('click', toggleFullscreen);
+
+    document.addEventListener('fullscreenchange', () => {
+      const icon = document.getElementById('fullscreenIcon');
+      if (icon) icon.innerText = document.fullscreenElement ? '🗗' : '⛶';
+    });
+
+    document.getElementById('soundToggle').addEventListener('click', () => {
+      sound.enabled = !sound.enabled;
+      document.getElementById('soundIcon').innerText = sound.enabled ? '🔊' : '🔇';
+    });
+
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      isPaused = true;
+      document.getElementById('startScreenModal').classList.remove('hidden');
+    });
+
+    /* ==========================================================
+       CARTOON UI CONTROLLER (MATCHING UPLOADED DESIGN)
+       ========================================================== */
+
+    // 1. Mode Pemain (1P vs 2P)
+    const pillMode1P = document.getElementById('pillMode1P');
+    const pillMode2P = document.getElementById('pillMode2P');
+    const checkMode1P = document.getElementById('checkMode1P');
+    const checkMode2P = document.getElementById('checkMode2P');
+    const playerModeHelp = document.getElementById('playerModeHelp');
+
+    function updateModePillUI() {
+      if (!gameConfig.is2P) {
+        pillMode1P.className = 'cartoon-pill flex items-center justify-between px-3.5 py-2.5 rounded-2xl border-2 border-green-500 bg-green-100 text-slate-800 font-bold text-sm sm:text-base';
+        checkMode1P.classList.remove('hidden');
+
+        pillMode2P.className = 'cartoon-pill flex items-center justify-between px-3.5 py-2.5 rounded-2xl border-2 border-slate-300 bg-slate-50 text-slate-500 font-bold text-sm sm:text-base hover:border-slate-400';
+        checkMode2P.classList.add('hidden');
+        if (playerModeHelp) playerModeHelp.innerText = 'Mode Solo: Navigasi maze dengan Tombol Panah atau WASD.';
+      } else {
+        pillMode2P.className = 'cartoon-pill flex items-center justify-between px-3.5 py-2.5 rounded-2xl border-2 border-green-500 bg-green-100 text-slate-800 font-bold text-sm sm:text-base';
+        checkMode2P.classList.remove('hidden');
+
+        pillMode1P.className = 'cartoon-pill flex items-center justify-between px-3.5 py-2.5 rounded-2xl border-2 border-slate-300 bg-slate-50 text-slate-500 font-bold text-sm sm:text-base hover:border-slate-400';
+        checkMode1P.classList.add('hidden');
+        if (playerModeHelp) playerModeHelp.innerText = 'Mode 2P: P1 (Kuning) = WASD | P2 (Hijau) = Tombol Panah. Berebut jawaban benar!';
+      }
+    }
+
+    if (pillMode1P) {
+      pillMode1P.addEventListener('click', () => {
+        gameConfig.is2P = false;
+        updateModePillUI();
+      });
+    }
+
+    if (pillMode2P) {
+      pillMode2P.addEventListener('click', () => {
+        gameConfig.is2P = true;
+        updateModePillUI();
+      });
+    }
+
+    // 2. Operasi Hitung (Tambah, Kurang, Kali, Bagi)
+    const opPills = [
+      { id: 'pillOpAdd', chk: 'opAdd', activeClass: 'border-cyan-400 bg-cyan-100 text-cyan-950', badgeColor: 'bg-emerald-500' },
+      { id: 'pillOpSub', chk: 'opSub', activeClass: 'border-purple-400 bg-purple-100 text-purple-950', badgeColor: 'bg-emerald-500' },
+      { id: 'pillOpMul', chk: 'opMul', activeClass: 'border-amber-400 bg-amber-100 text-amber-950', badgeColor: 'bg-emerald-500' },
+      { id: 'pillOpDiv', chk: 'opDiv', activeClass: 'border-rose-400 bg-rose-100 text-rose-950', badgeColor: 'bg-emerald-500' }
+    ];
+
+    opPills.forEach(item => {
+      const btn = document.getElementById(item.id);
+      const chk = document.getElementById(item.chk);
+      if (btn && chk) {
+        btn.addEventListener('click', () => {
+          chk.checked = !chk.checked;
+          const checkBadge = btn.querySelector('.check-badge');
+          if (chk.checked) {
+            btn.className = `cartoon-pill op-toggle-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 ${item.activeClass} font-bold text-sm`;
+            if (checkBadge) checkBadge.classList.remove('hidden');
+          } else {
+            // Check if at least one remains checked
+            const anyChecked = opPills.some(p => {
+              const c = document.getElementById(p.chk);
+              return c && c.checked;
+            });
+            if (!anyChecked) {
+              chk.checked = true; // Keep at least one checked
+              return;
+            }
+            btn.className = 'cartoon-pill op-toggle-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-slate-300 bg-slate-50 text-slate-400 font-bold text-sm';
+            if (checkBadge) checkBadge.classList.add('hidden');
+          }
+        });
+      }
+    });
+
+    // 3. Tingkat Kesukaran (Mudah, Sedang, Sulit)
+    const diffPills = document.querySelectorAll('.diff-pill');
+    diffPills.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.getAttribute('data-diff-val');
+        gameConfig.difficulty = val;
+        diffPills.forEach(b => {
+          const check = b.querySelector('.diff-check');
+          if (b === btn) {
+            b.className = 'cartoon-pill diff-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-amber-400 bg-amber-100 text-amber-950 font-bold text-xs sm:text-sm';
+            if (check) check.classList.remove('hidden');
+          } else {
+            b.className = 'cartoon-pill diff-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-slate-300 bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm';
+            if (check) check.classList.add('hidden');
+          }
+        });
+      });
+    });
+
+    // 4. Target Jumlah Soal (10, 15, 20 Soal)
+    const limitPills = document.querySelectorAll('.limit-pill');
+    limitPills.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lim = parseInt(btn.getAttribute('data-limit-val'), 10);
+        gameConfig.questionLimit = lim;
+        limitPills.forEach(b => {
+          const check = b.querySelector('.limit-check');
+          if (b === btn) {
+            b.className = 'cartoon-pill limit-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-cyan-400 bg-cyan-100 text-cyan-950 font-bold text-xs sm:text-sm';
+            if (check) check.classList.remove('hidden');
+          } else {
+            b.className = 'cartoon-pill limit-pill flex items-center justify-between px-3 py-2 rounded-2xl border-2 border-slate-300 bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm';
+            if (check) check.classList.add('hidden');
+          }
+        });
+      });
+    });
+
+    // 5. Layar Sentuh (PID / IFP) Toggle Row
+    const ifpTouchRow = document.getElementById('ifpTouchRow');
+    const ifpSquareCheck = document.getElementById('ifpSquareCheck');
+    const ifpCheckbox = document.getElementById('ifpTouchCheckbox');
+
+    if (ifpTouchRow && ifpCheckbox && ifpSquareCheck) {
+      ifpTouchRow.addEventListener('click', () => {
+        ifpCheckbox.checked = !ifpCheckbox.checked;
+        gameConfig.showTouchControls = ifpCheckbox.checked;
+        if (ifpCheckbox.checked) {
+          ifpSquareCheck.className = 'w-6 h-6 rounded-lg bg-emerald-500 text-white text-sm flex items-center justify-center font-black shadow-sm';
+          ifpSquareCheck.innerText = '✓';
+        } else {
+          ifpSquareCheck.className = 'w-6 h-6 rounded-lg bg-slate-300 text-transparent text-sm flex items-center justify-center font-black shadow-sm';
+          ifpSquareCheck.innerText = '';
+        }
+      });
+    }
+
+    // Read selected Math Operations
+    function getSelectedOperations() {
+      const ops = [];
+      if (document.getElementById('opAdd').checked) ops.push('+');
+      if (document.getElementById('opSub').checked) ops.push('-');
+      if (document.getElementById('opMul').checked) ops.push('×');
+      if (document.getElementById('opDiv').checked) ops.push('÷');
+      return ops.length > 0 ? ops : ['+'];
+    }
+
+    function startNewGame() {
+      score = 0;
+      scoreP2 = 0;
+      lives = 3;
+      livesP2 = 3;
+      level = 1;
+      questionsSolved = 0;
+      isGameOver = false;
+      isPaused = false;
+      invulnerableTimer = 0;
+      invulnerableTimerP2 = 0;
+      particles = [];
+
+      gameConfig.allowedOps = getSelectedOperations();
+      const touchCheck = document.getElementById('ifpTouchCheckbox');
+      gameConfig.showTouchControls = touchCheck ? touchCheck.checked : true;
+
+      // UI HUD Visibility
+      const p2Hud = document.getElementById('p2HudBlock');
+      const p1Label = document.getElementById('p1Label');
+      const controlsGuideText = document.getElementById('controlsGuideText');
+
+      if (gameConfig.is2P) {
+        p2Hud.classList.remove('hidden');
+        p2Hud.classList.add('flex');
+        p1Label.innerText = 'P1:';
+        controlsGuideText.innerHTML = '<span class="text-yellow-300 font-bold">P1 (Kiri): D-Pad Kuning / WASD</span> vs <span class="text-emerald-300 font-bold">P2 (Kanan): D-Pad Hijau / Panah</span>. Siap untuk IFP!';
+      } else {
+        p2Hud.classList.add('hidden');
+        p2Hud.classList.remove('flex');
+        p1Label.innerText = 'Skor:';
+      controlsGuideText.innerHTML = 'Sentuh tombol D-Pad di samping labirin atau gunakan tombol panah/WASD.';
+    }
+
+    updateQuestionProgressDisplay();
+    document.getElementById('scoreDisplay').innerText = score;
+    document.getElementById('scoreDisplayP2').innerText = scoreP2;
+    document.getElementById('levelDisplay').innerText = level;
+    document.getElementById('gameModal').classList.add('hidden');
+      document.getElementById('startScreenModal').classList.add('hidden');
+
+      updateTouchControlsVisibility();
+
+      // Reset Player 1 Position (Bottom center)
+      player.x = 11;
+      player.y = 17;
+      player.px = 11 * TILE_SIZE;
+      player.py = 17 * TILE_SIZE;
+      player.dirX = 0;
+      player.dirY = 0;
+      player.nextDirX = 0;
+      player.nextDirY = 0;
+
+      // Reset Player 2 Position (Top center)
+      player2.x = 11;
+      player2.y = 4;
+      player2.px = 11 * TILE_SIZE;
+      player2.py = 4 * TILE_SIZE;
+      player2.dirX = 0;
+      player2.dirY = 0;
+      player2.nextDirX = 0;
+      player2.nextDirY = 0;
+
+      updateLivesDisplay();
+      initMonsters();
+      spawnQuestion();
+    }
+
+    document.getElementById('startGameBtn').addEventListener('click', () => {
+      startNewGame();
+    });
+
+    document.getElementById('modalActionBtn').addEventListener('click', () => {
+      startNewGame();
+    });
+
+    // Start everything on window load
+    window.onload = function() {
+      resizeCanvas();
+      spawnQuestion();
+      // Show start screen on launch
+      document.getElementById('startScreenModal').classList.remove('hidden');
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>
